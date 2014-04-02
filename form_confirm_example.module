@@ -1,0 +1,130 @@
+<?php
+
+function form_confirm_example_menu() {
+	$items = array();
+
+	$items['form_confirm_example_one'] = array(
+		'title' => t('Test form one'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('form_confirm_example_form'),
+    'access callback' => TRUE
+	);
+
+	$items['form_confirm_example_two'] = array(
+		'title' => t('Test form two'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('boley_second_test_form'),
+    'access callback' => TRUE
+	);
+
+	$items['form_confirm_example_success'] = array(
+		'title' => t('Test form two'),
+    'page callback' => 'form_confirm_example_success_handler',
+    'access callback' => TRUE
+	);
+	return $items;
+}
+
+function form_confirm_example_success_handler() {
+	return " ";
+}
+
+function form_confirm_example_form($form_state) {
+
+  //check if we are in the "confirm" state
+  if(!isset($form_state['storage']['confirm'])) {
+    $form = array();
+    $form['query'] = array(
+      '#type' => 'textfield',
+      '#title' => 'Query'
+    );
+
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Submit')
+    );
+  }
+  else {
+    //We are in the confirm state, return a confirm
+    $form = confirm_form($form,'Do you want to continue with this action?','form_url','','Proceed','Cancel');
+  }
+  return $form;
+}
+
+function form_confirm_example_form_validate($form, &$form_state) {
+
+
+  //Don't do form validation if we're in the "confirm" state
+  if(!isset($form_state['storage']['confirm']))
+  {
+    //Normal form validation goes inside this if statement
+    if(empty($form_state['values']['query'])) {
+      form_set_error($form_state['values']['query'], t('No query was entered'));
+    }
+  }
+
+}
+
+function form_confirm_example_form_submit($form, &$form_state) {
+  //check if we have gone through a confirm process. If not, store the form values and tell the form api to rebuild this form
+  //using the confirm_form function
+  if(!isset($form_state['storage']['confirm']))
+    {
+      $form_state['storage']['confirm'] = TRUE; // this will cause the form to be rebuilt, entering the confirm part of the form
+      $form_state['rebuild'] = TRUE; // along with this
+      $form_state['storage']['original_values'] = $form_state['values']; //stores the original form values so we can access them later
+    }
+    else
+    {
+      $values = $form_state['storage']['original_values'];
+      // this is where you do your processing after having pressed the confirm button
+      $query = $values['query'];
+      drupal_set_message(t('form sumitted sucessfully: !query', array('!query' => $query )));
+      drupal_goto('form_confirm_example_success');
+    }
+}
+
+function boley_second_test_form($form_state) {
+	drupal_add_js(drupal_get_path('module', 'form_confirm_example') . '/form_behaviours.js');
+
+  $form = array();
+  $form['query'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Query'
+  );
+
+  $form['noconfirm_submit'] = array(
+    '#type' => 'button',
+    '#value' => t('Submit')
+  );
+
+  $form['confirm_fieldset'] = array(
+  	'#type' => 'fieldset',
+  	'#tree' => TRUE,
+  	'#attributes' => array('class' => 'confirm-fieldset'),
+  	'#description' => 'Are you sure you want to continue?'
+  );
+
+  $form['confirm_fieldset']['cancel'] = array(
+    '#type' => 'submit',
+    '#value' => t('Cancel')
+  );
+  $form['confirm_fieldset']['confirm_submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Confirm')
+  );
+
+  return $form;
+}
+
+function boley_second_test_form_validate($form, &$form_state) {
+
+}
+
+function boley_second_test_form_submit($form, &$form_state) {
+
+  // this is where you do your processing after having pressed the confirm button
+  $query = $form_state['values']['query'];
+  drupal_set_message(t('form sumitted sucessfully: !query', array('!query' => $query )));
+  drupal_goto('form_confirm_example_success');
+}

@@ -1,0 +1,4 @@
+name = "Form Confirm Example"
+description = "Contains a couple examples for form confirmation logic in drupal"
+core = "6.x"
+package = "Misc"
